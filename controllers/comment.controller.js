@@ -1,17 +1,23 @@
 const Comment = require('../models/comment.model');
 const Product = require('../models/product.model');
+const User = require('../models/user.model');
+const sendNotifications = require('../services/notification.service');
 
 // Add comment to a product
 const addComment = async (req, res) => {
   try {
-    const { productId, content } = req.body;
+    const { content } = req.body;
+    const { productId } = req.params;
     const product = await Product.findById(productId);
     if (!product) return res.status(404).json({ message: 'Product not found!' });
 
-    const newComment = new Comment({ content, user: req.user._id, product: productId });
+    const user = await User.findById(product.user);
+    if (!user) return res.status(404).json({ message: 'user not found!' });
+
+    const newComment = new Comment({ content, user: user._id, product: productId });
     await newComment.save();
 
-    await sendNotifications(product.user.phone, product.user.email, content);
+    await sendNotifications(user.phone, user.email, content);
 
     res.json({ message: 'Comment added successfully!', comment: newComment });
   } catch (error) {

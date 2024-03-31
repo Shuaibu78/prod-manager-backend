@@ -1,18 +1,7 @@
-const nodemailer = require('nodemailer');
-const africastalking = require('africastalking');
 
-// Configure email transporter (replace with your credentials)
-const transporter = nodemailer.createTransport({
-  host: 'smtp.your-email-provider.com',
-  port: 587,
-  secure: false, // Adjust based on your email provider
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASSWORD,
-  },
-});
+const africastalkingSms = require('../config/africastalking.config');
+const transporter = require('../config/nodemailer.config');
 
-// Call this function after adding a comment to notify the product owner
 async function sendEmailNotification(recipient, subject, message) {
   try {
     const mailOptions = {
@@ -28,10 +17,9 @@ async function sendEmailNotification(recipient, subject, message) {
   }
 };
 
-// Call this function after adding a comment to notify the product owner
 async function sendSMSNotification(recipient, message) {
   try {
-    const response = await africastalking.SMS.send({
+    const response = await africastalkingSms.SMS.send({
       to: recipient,
       message,
     });
@@ -45,11 +33,15 @@ async function sendNotifications(recipientPhone, recipientEmail, commentContent,
   const subject = replyMessage ? 'Reply to your comment!' : 'New comment on your product!';
   const message = `A new comment has been added to your product: ${commentContent}. ${replyMessage}`;
 
-  // Send email notification
-  await sendEmailNotification(recipientEmail, subject, message);
+  try {
+    // Send email notification
+    await sendEmailNotification(recipientEmail, subject, message);
 
-  // Send SMS notification (uncomment and configure if needed)
-  await sendSMSNotification(recipientPhone, message);
+    // Send SMS notification
+    await sendSMSNotification(recipientPhone, message);
+  } catch (error) {
+    console.error('Error sending notifications:', error);
+  }
 }
 
 module.exports = sendNotifications;
